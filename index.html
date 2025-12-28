@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>D turns Driving School</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f3e5f5; padding: 15px; }
+        .container { background: white; width: 100%; max-width: 450px; padding: 25px; border-radius: 30px; box-shadow: 0 20px 40px rgba(106, 27, 154, 0.2); margin: auto; }
+        
+        .logo-container { text-align: center; margin-bottom: 10px; }
+        .logo { 
+            width: 100px; height: 100px; border-radius: 50%; background: #fff; 
+            display: inline-flex; align-items: center; justify-content: center; 
+            border: 5px solid #7b1fa2; 
+            box-shadow: 0 8px 20px rgba(123, 31, 162, 0.4), inset 0 2px 5px rgba(0,0,0,0.2); 
+            overflow: hidden; 
+        }
+        .logo img { width: 100%; height: 100%; object-fit: cover; }
+
+        .tabs { display: flex; margin-bottom: 20px; background: #f3e5f5; border-radius: 15px; padding: 5px; }
+        .tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: bold; color: #7b1fa2; border-radius: 12px; transition: 0.3s; }
+        .tab.active { background: white; color: #4a148c; box-shadow: 0 4px 10px rgba(123, 31, 162, 0.2); }
+        
+        h2 { text-align: center; color: #4a148c; margin-bottom: 15px; font-size: 19px; font-weight: bold; }
+        label { display: block; margin-top: 12px; font-weight: 600; color: #6a1b9a; font-size: 13px; }
+        input, select { width: 100%; padding: 14px; margin-top: 6px; border: 1px solid #e1bee7; border-radius: 12px; font-size: 16px; background: #fdfbff; }
+        input[readonly] { background-color: #f3e5f5; color: #4a148c; }
+
+        .display-box { 
+            background: linear-gradient(135deg, #8e24aa, #4a148c); 
+            padding: 25px; border-radius: 20px; margin-top: 20px; text-align: center; color: white; 
+            box-shadow: 0 10px 25px rgba(74, 20, 140, 0.3); 
+            border-bottom: 5px solid #310d5e;
+        }
+        .timer { font-size: 38px; font-weight: 800; letter-spacing: 1px; }
+        .fees { font-size: 24px; font-weight: 600; margin-top: 5px; opacity: 0.9; }
+
+        button { width: 100%; padding: 16px; border: none; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 15px; }
+        #startBtn { background: #4caf50; color: white; border-bottom: 5px solid #2e7d32; }
+        #stopBtn { background: #f44336; color: white; border-bottom: 5px solid #c62828; }
+        #clearBtn { background: #ff9800; color: white; border-bottom: 5px solid #e68a00; margin-top: 10px; font-size: 16px; }
+        #submitBtn { background: #7b1fa2; color: white; border-bottom: 5px solid #4a148c; }
+        
+        button:active { transform: translateY(3px); border-bottom-width: 2px; }
+
+        #sig-canvas { border: 2px dashed #7b1fa2; border-radius: 15px; background: #fff; width: 100%; height: 180px; margin-top: 10px; touch-action: none; }
+        
+        #historySection { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { border-bottom: 1px solid #e1bee7; padding: 12px 8px; text-align: left; }
+        th { color: #6a1b9a; text-transform: uppercase; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo-container">
+        <div class="logo">
+            <img src="https://i.ibb.co/9kY6z0BB/logo.png" alt="D Turns Logo">
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" id="tripTab" onclick="showTab('trip')">Today Class</div>
+        <div class="tab" id="historyTab" onclick="showTab('history')">History</div>
+    </div>
+
+    <div id="tripSection">
+        <h2>D turns driving school<br>daily trip sheet</h2>
+        
+        <label>Student Name</label>
+        <input type="text" id="studentName" placeholder="പേര് നൽകുക">
+
+        <label>Date</label>
+        <input type="text" id="currentDate" readonly>
+
+        <label>Select Course</label>
+        <select id="course">
+            <option value="13.888">Driving Mastery Level 1</option>
+            <option value="8.333">Driving Mastery Level 2</option>
+            <option value="11.666">Regular Driving License</option>
+        </select>
+
+        <div class="display-box">
+            <div class="timer" id="timerDisplay">00:00:00</div>
+            <div class="fees" id="feeDisplay">₹0.00</div>
+        </div>
+
+        <button id="startBtn" onclick="startTrip()">Start Class</button>
+        <button id="stopBtn" style="display:none;" onclick="stopTrip()">Stop Class</button>
+
+        <div id="afterStop" style="display:none;">
+            <label>Fees Paid</label>
+            <input type="number" id="feesPaid" placeholder="0" min="0">
+
+            <label style="text-align:center; display:block; margin-top:15px;">Signature Below</label>
+            <canvas id="sig-canvas"></canvas>
+            
+            <button id="clearBtn" onclick="clearSignature()">Clear Signature</button>
+            
+            <button id="submitBtn" onclick="submitData()">Submit Sheet</button>
+        </div>
+    </div>
+
+    <div id="historySection">
+        <h2 id="historyTitle">Class History</h2>
+        <table id="historyTable">
+            <thead>
+                <tr><th>Course</th><th>Time</th><th>Fees</th><th>Date</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // നിങ്ങളുടെ Google Script URL താഴെ നൽകുക
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOxG9Pk_8azULkDAV4u0HMAsVDG9QvkuMJyJ7f944APR46yvfPZESsBzw2l-We33f0gw/exec";
+    
+    let timerInterval;
+    let currentRate = 0;
+
+    function setTodayDate() {
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        document.getElementById('currentDate').value = dd + '/' + mm + '/' + yyyy;
+    }
+
+    window.onload = function() {
+        setTodayDate();
+        if (localStorage.getItem('startTime')) setupRunningTrip();
+    };
+
+    function setupRunningTrip() {
+        document.getElementById('studentName').value = localStorage.getItem('studentName');
+        document.getElementById('course').value = localStorage.getItem('courseRate');
+        document.getElementById('studentName').disabled = true;
+        document.getElementById('course').disabled = true;
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'block';
+        startTimer();
+    }
+
+    function startTrip() {
+        const name = document.getElementById('studentName').value.trim();
+        if(!name) { alert("ദയവായി പേര് നൽകുക"); return; }
+        localStorage.setItem('startTime', new Date().getTime());
+        localStorage.setItem('studentName', name);
+        localStorage.setItem('courseName', document.getElementById('course').options[document.getElementById('course').selectedIndex].text);
+        localStorage.setItem('courseRate', document.getElementById('course').value);
+        setupRunningTrip();
+    }
+
+    function startTimer() {
+        currentRate = parseFloat(localStorage.getItem('courseRate'));
+        timerInterval = setInterval(updateDisplay, 1000);
+    }
+
+    function updateDisplay() {
+        let startTime = localStorage.getItem('startTime');
+        let diffSecs = Math.floor((new Date().getTime() - startTime) / 1000);
+        let hrs = Math.floor(diffSecs / 3600);
+        let mins = Math.floor((diffSecs % 3600) / 60);
+        let secs = diffSecs % 60;
+        document.getElementById('timerDisplay').innerText = 
+            `${hrs < 10 ? '0'+hrs : hrs}:${mins < 10 ? '0'+mins : mins}:${secs < 10 ? '0'+secs : secs}`;
+        document.getElementById('feeDisplay').innerText = `₹${(Math.floor(diffSecs/60) * currentRate).toFixed(2)}`;
+    }
+
+    function stopTrip() {
+        clearInterval(timerInterval);
+        document.getElementById('stopBtn').style.display = 'none';
+        document.getElementById('afterStop').style.display = 'block';
+        setTimeout(initSignature, 200);
+    }
+
+    function clearSignature() {
+        const canvas = document.getElementById("sig-canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function submitData() {
+        const feesPaid = document.getElementById('feesPaid').value;
+        
+        // Validation: തുക രേഖപ്പെടുത്തിയിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുന്നു (0 അനുവദിക്കും)
+        if (feesPaid === "") {
+            alert("Fees Paid ബോക്സിൽ തുക രേഖപ്പെടുത്തുക (വാങ്ങിയിട്ടില്ലെങ്കിൽ 0 എന്ന് നൽകുക).");
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitBtn');
+        const canvas = document.getElementById("sig-canvas");
+        submitBtn.innerText = "Submitting...";
+        submitBtn.disabled = true;
+
+        const payload = {
+            date: document.getElementById('currentDate').value,
+            name: localStorage.getItem('studentName'),
+            course: localStorage.getItem('courseName'),
+            duration: document.getElementById('timerDisplay').innerText,
+            fees: document.getElementById('feeDisplay').innerText,
+            paid: feesPaid,
+            signature: canvas.toDataURL()
+        };
+
+        fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: JSON.stringify(payload) 
+        })
+        .then(() => {
+            let history = JSON.parse(localStorage.getItem('tripHistory') || "[]");
+            history.push(payload);
+            localStorage.setItem('tripHistory', JSON.stringify(history));
+            localStorage.removeItem('startTime');
+            alert("വിവരങ്ങൾ ഷീറ്റിലേക്ക് അയച്ചു!");
+            location.reload();
+        }).catch((err) => {
+            console.error(err);
+            alert("Error! വിവരങ്ങൾ അയക്കാൻ കഴിഞ്ഞില്ല.");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Submit Sheet";
+        });
+    }
+
+    function showTab(tab) {
+        document.getElementById('tripSection').style.display = tab === 'trip' ? 'block' : 'none';
+        document.getElementById('historySection').style.display = tab === 'history' ? 'block' : 'none';
+        document.getElementById('tripTab').classList.toggle('active', tab === 'trip');
+        document.getElementById('historyTab').classList.toggle('active', tab === 'history');
+        if(tab === 'history') updateHistory(document.getElementById('studentName').value);
+    }
+
+    function updateHistory(searchName) {
+        let history = JSON.parse(localStorage.getItem('tripHistory') || "[]");
+        let tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
+        history.filter(item => item.name.toLowerCase() === searchName.toLowerCase()).forEach(item => {
+            tbody.innerHTML += `<tr><td>${item.course}</td><td>${item.duration}</td><td>${item.fees}</td><td>${item.date}</td></tr>`;
+        });
+    }
+
+    function initSignature() {
+        const canvas = document.getElementById("sig-canvas");
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+        
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+        
+        const start = (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+        const move = (e) => { if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+        const stop = () => { drawing = false; ctx.closePath(); };
+        
+        canvas.addEventListener("touchstart", start, {passive: false});
+        canvas.addEventListener("touchmove", move, {passive: false});
+        canvas.addEventListener("touchend", stop);
+        canvas.addEventListener("mousedown", start);
+        canvas.addEventListener("mousemove", move);
+        canvas.addEventListener("mouseup", stop);
+        
+        ctx.lineWidth = 3; ctx.strokeStyle = "#000"; ctx.lineJoin = "round"; ctx.lineCap = "round";
+    }
+</script>
+</body>
+</html>
